@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 
 #define ERROR_S "SERVER ERROR: "
-#define DEFAULT_PORT 1601
+#define DEFAULT_PORT 1602
 #define BUFFER_SIZE 1024
 #define CLIENT_CLOSE_CONNECTION_SYMBOL '#'
 
@@ -72,7 +72,7 @@ int main(int argc, char const* argvp[])
             isExit = true;
         }
 
-        while(isExit)
+        while(!isExit)
         {
             std::cout << "Server: ";
             std::cin.getline(buffer, BUFFER_SIZE);
