@@ -7,24 +7,24 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-#define ERROR_C "ClIENT ERROR: "
-#define SERVER_IP "127.0.0.1"
+#define ERROR_BL "BL ERROR: "
 #define DEFAULT_PORT 1603
+#define SERVER_IP "127.0.0.1"
 #define BUFFER_SIZE 1024
-#define SERVER_CLOSE_CONNECTION_SYMBOL '#'
+#define CLIENT_CLOSE_CONNECTION_SYMBOL '#'
 
 bool is_client_connection_close(const char* msg);
 
 int main(int argc, char const* argvp[])
 {
-    int client;
-    struct sockaddr_in server_address;  
-    
-    client = socket(AF_INET, SOCK_STREAM, 0);
+    int business_logic;
+    struct sockaddr_in server_address;
 
-    if (client < 0)
+    business_logic = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (business_logic < 0)
     {
-        std::cout << ERROR_C << "establishing socket error.";
+        std::cout << ERROR_BL << "establishing socket error.";
         exit(0);
     }
 
@@ -32,9 +32,9 @@ int main(int argc, char const* argvp[])
     server_address.sin_family = AF_INET;
     inet_pton(AF_INET, SERVER_IP, &server_address.sin_addr);
 
-    std::cout << "\n => Client socket created.";
+    std::cout << "\n => BusinessLogic socket created.";
 
-    int ret = connect(client, 
+    int ret = connect(business_logic, 
         reinterpret_cast<const struct sockaddr*>(&server_address),
         sizeof(server_address));
 
@@ -47,23 +47,23 @@ int main(int argc, char const* argvp[])
 
     char buffer[BUFFER_SIZE];
     std::cout << "=> Waiting for server confirmation...\n";
-    recv(client, buffer, BUFFER_SIZE, 0);
+    recv(business_logic, buffer, BUFFER_SIZE, 0);
     std::cout << "=> Connection established.\n" 
-    << "Enter " << SERVER_CLOSE_CONNECTION_SYMBOL
+    << "Enter " << CLIENT_CLOSE_CONNECTION_SYMBOL
     << " for close connection\n\n";
 
     while (true)
     {
         std::cout << "Client: ";
         std::cin.getline(buffer, BUFFER_SIZE);
-        send(client, buffer, BUFFER_SIZE, 0);
+        send(business_logic, buffer, BUFFER_SIZE, 0);
         if(is_client_connection_close(buffer))
         {
             break;
         }
 
         std::cout << "Server: ";
-        recv(client, buffer, BUFFER_SIZE, 0);
+        recv(business_logic, buffer, BUFFER_SIZE, 0);
         std::cout << buffer;
         if(is_client_connection_close(buffer))
         {
@@ -71,16 +71,17 @@ int main(int argc, char const* argvp[])
         }
         std::cout << std::endl;
     }
-    close(client);
+    close(business_logic);
     std::cout << "\n Goodbye..." << std::endl;
     return 0;
+
 }
 
 bool is_client_connection_close(const char* msg)
 {
     for (int i = 0; i < strlen(msg); ++i)
     {
-        if (msg[i] == SERVER_CLOSE_CONNECTION_SYMBOL)
+        if (msg[i] == CLIENT_CLOSE_CONNECTION_SYMBOL)
         {
             return true;
         }

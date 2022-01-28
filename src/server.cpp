@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 
 #define ERROR_S "SERVER ERROR: "
-#define DEFAULT_PORT 1602
+#define DEFAULT_PORT 1603
 #define BUFFER_SIZE 1024
 #define CLIENT_CLOSE_CONNECTION_SYMBOL '#'
 
