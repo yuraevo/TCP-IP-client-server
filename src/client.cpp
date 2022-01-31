@@ -17,10 +17,9 @@ bool is_client_connection_close(const char* msg);
 
 int main(int argc, char const* argvp[])
 {
-    int client;
-    struct sockaddr_in server_address;  
-    
-    client = socket(AF_INET, SOCK_STREAM, 0);
+    int client = socket(AF_INET, SOCK_STREAM, 0);
+    char buffer[BUFFER_SIZE];
+    bool isClose = false;
 
     if (client < 0)
     {
@@ -28,11 +27,12 @@ int main(int argc, char const* argvp[])
         exit(0);
     }
 
+    std::cout << "\n=> BusinessLogic socket created\n";
+
+    struct sockaddr_in server_address;
     server_address.sin_port = htons(DEFAULT_PORT);
     server_address.sin_family = AF_INET;
     inet_pton(AF_INET, SERVER_IP, &server_address.sin_addr);
-
-    std::cout << "\n => Client socket created.";
 
     int ret = connect(client, 
         reinterpret_cast<const struct sockaddr*>(&server_address),
@@ -45,37 +45,39 @@ int main(int argc, char const* argvp[])
         << "with port number: " << DEFAULT_PORT << "\n";
     }
 
-    char buffer[BUFFER_SIZE];
-    std::cout << "=> Waiting for server confirmation...\n";
-    recv(client, buffer, BUFFER_SIZE, 0);
-    std::cout << "=> Connection established.\n" 
-    << "Enter " << SERVER_CLOSE_CONNECTION_SYMBOL
-    << " for close connection\n\n";
-
-    while (true)
+    do
     {
         std::cout << "Client: ";
+        bzero(buffer, BUFFER_SIZE);
         std::cin.getline(buffer, BUFFER_SIZE);
-        send(client, buffer, BUFFER_SIZE, 0);
+        send(client, buffer, strlen(buffer), 0);
+        std::cout << buffer << std::endl;
         if(is_client_connection_close(buffer))
         {
-            break;
+            isClose = is_client_connection_close(buffer);
         }
 
-        std::cout << "Server: ";
-        recv(client, buffer, BUFFER_SIZE, 0);
-        std::cout << buffer;
-        if(is_client_connection_close(buffer))
-        {
-            break;
-        }
-        std::cout << std::endl;
-    }
-    close(client);
-    std::cout << "\n Goodbye..." << std::endl;
+        bzero(buffer, 1024);
+        recv(client, buffer, sizeof(buffer), 0);
+        printf("Server: %s\n", buffer);
+        
+    } while (isClose == false);
+    
+ 
+    // bzero(buffer, 1024);
+    // strcpy(buffer, "HELLO, THIS IS CLIENT.");
+    // printf("Client: %s\n", buffer);
+    // send(business_logic, buffer, strlen(buffer), 0);
+ 
+    // bzero(buffer, 1024);
+    // recv(business_logic, buffer, sizeof(buffer), 0);
+    // printf("Server: %s\n", buffer);
+ 
+    // close(business_logic);
+    // printf("Disconnected from the server.\n");
     return 0;
-}
 
+}
 bool is_client_connection_close(const char* msg)
 {
     for (int i = 0; i < strlen(msg); ++i)
