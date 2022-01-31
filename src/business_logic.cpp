@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 
 #define ERROR_BL "BL ERROR: "
-#define DEFAULT_PORT 1603
+#define DEFAULT_PORT 1605
 #define SERVER_IP "127.0.0.1"
 #define BUFFER_SIZE 1024
 #define CLIENT_CLOSE_CONNECTION_SYMBOL '#'
@@ -17,10 +17,8 @@ bool is_client_connection_close(const char* msg);
 
 int main(int argc, char const* argvp[])
 {
-    int business_logic;
-    struct sockaddr_in server_address;
-
-    business_logic = socket(AF_INET, SOCK_STREAM, 0);
+    int business_logic = socket(AF_INET, SOCK_STREAM, 0);
+    char buffer[BUFFER_SIZE];
 
     if (business_logic < 0)
     {
@@ -28,11 +26,12 @@ int main(int argc, char const* argvp[])
         exit(0);
     }
 
+    std::cout << "\n=> BusinessLogic socket created\n";
+
+    struct sockaddr_in server_address;
     server_address.sin_port = htons(DEFAULT_PORT);
     server_address.sin_family = AF_INET;
     inet_pton(AF_INET, SERVER_IP, &server_address.sin_addr);
-
-    std::cout << "\n => BusinessLogic socket created.";
 
     int ret = connect(business_logic, 
         reinterpret_cast<const struct sockaddr*>(&server_address),
@@ -44,35 +43,18 @@ int main(int argc, char const* argvp[])
         << inet_ntoa(server_address.sin_addr) 
         << "with port number: " << DEFAULT_PORT << "\n";
     }
-
-    char buffer[BUFFER_SIZE];
-    std::cout << "=> Waiting for server confirmation...\n";
-    recv(business_logic, buffer, BUFFER_SIZE, 0);
-    std::cout << "=> Connection established.\n" 
-    << "Enter " << CLIENT_CLOSE_CONNECTION_SYMBOL
-    << " for close connection\n\n";
-
-    while (true)
-    {
-        std::cout << "Client: ";
-        std::cin.getline(buffer, BUFFER_SIZE);
-        send(business_logic, buffer, BUFFER_SIZE, 0);
-        if(is_client_connection_close(buffer))
-        {
-            break;
-        }
-
-        std::cout << "Server: ";
-        recv(business_logic, buffer, BUFFER_SIZE, 0);
-        std::cout << buffer;
-        if(is_client_connection_close(buffer))
-        {
-            break;
-        }
-        std::cout << std::endl;
-    }
+ 
+    // bzero(buffer, BUFFER_SIZE);
+    // strcpy(buffer, "HELLO, THIS IS BL.");
+    // printf("Client: %s\n", buffer);
+    // send(business_logic, buffer, strlen(buffer), 0);
+ 
+    bzero(buffer, BUFFER_SIZE);
+    recv(business_logic, buffer, sizeof(buffer), 0);
+    printf("Server: %s\n", buffer);
+ 
     close(business_logic);
-    std::cout << "\n Goodbye..." << std::endl;
+    printf("Disconnected from the server.\n");
     return 0;
 
 }
