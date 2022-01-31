@@ -24,10 +24,11 @@ int main(int argc, char const* argvp[])
     if (client < 0)
     {
         std::cout << ERROR_C << "establishing socket error.";
-        exit(0);
+        exit(1);
     }
-
-    std::cout << "\n=> BusinessLogic socket created\n";
+    else {
+        std::cout << "\n=> Client socket created\n";
+    }
 
     struct sockaddr_in server_address;
     server_address.sin_port = htons(DEFAULT_PORT);
@@ -42,7 +43,7 @@ int main(int argc, char const* argvp[])
     {
         std::cout << "=> Connection to server " 
         << inet_ntoa(server_address.sin_addr) 
-        << "with port number: " << DEFAULT_PORT << "\n";
+        << " with port number: " << DEFAULT_PORT << "\n";
     }
 
     do
@@ -59,7 +60,7 @@ int main(int argc, char const* argvp[])
 
         bzero(buffer, 1024);
         recv(client, buffer, sizeof(buffer), 0);
-        printf("Server: %s\n", buffer);
+        std::cout << "Server: " << buffer << std::endl;
         
     } while (isClose == false);
     
