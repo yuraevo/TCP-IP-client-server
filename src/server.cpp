@@ -10,6 +10,7 @@
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
 #include <sstream>
 #include <stdio.h>
 #include <cstdlib> //std::system
@@ -19,6 +20,7 @@
 #define DEFAULT_PORT_BL 1605
 #define BUFFER_SIZE 1024
 #define CLIENT_CLOSE_CONNECTION_SYMBOL '#'
+#define BOOST_INTERPROCESS_BOOTSTAMP_IS_SESSION_MANAGER_BASED
 
 std::mutex display_mutex;
 using namespace boost::interprocess;
@@ -129,26 +131,30 @@ void create_communication_with_client()
             send(business_logic, buffer, strlen(buffer), 0); 
 
 
-            // memset(buffer_shared_memory, '\0', sizeof(buffer_shared_memory));
-            // memset(opt, '\0', sizeof(opt));
-    
-            // managed_shared_memory segment (open_only, "MySharedMemory");
-            // managed_shared_memory::handle_t handle = 0;
+            memset(buffer_shared_memory, '\0', sizeof(buffer_shared_memory));
+            memset(opt, '\0', sizeof(opt)); 
 
+            // mapped_region region;
 
-            // void *msg = segment.get_address_from_handle(handle);
+            // shared_memory_object shared_memory_object(open_only, "MySharedMemory", read_only);
+            // region = mapped_region(shared_memory_object, read_only);
+            // void *msg = static_cast<void*>(region.get_address());
+
+            shared_memory_object::remove("MySharedMemory");
+            managed_shared_memory segment(open_read_only, "MySharedMemory");
+            managed_shared_memory::handle_t handle = 192; 
+
+            // std::stringstream s;
+            // s << 240;
+            // s >> handle;
+
+            void *msg = segment.get_address_from_handle(handle);
 
             // std::cout << "answer for business_logic: \n";
-            // std::cout << (char*)msg << std::endl;
-
-
-            std::cout << "Go to client?\n"; 
+            std::cout << (char*)msg << std::endl;
 
             // send(client, mem, strlen(mem), 0);
-            
-
         }
- 
         close(client);
         printf("[+]Client disconnected.\n\n");
         

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -10,7 +9,6 @@
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/mapped_region.hpp>
-#include <string>
 #include <cstdlib> //std::system
 
 #define ERROR_BL "BL ERROR: "
@@ -62,7 +60,7 @@ int main(int argc, char const* argvp[])
     recv(business_logic, buffer, sizeof(buffer), 0);
     printf("Server: %s\n", buffer);
 
-    memset(buffer_shared_memory, '\0', sizeof(buffer_shared_memory));
+    //memset(buffer_shared_memory, '\0', sizeof(buffer_shared_memory));
     memset(opt, '\0', sizeof(opt));
 
     struct shm_remove
@@ -83,19 +81,21 @@ int main(int argc, char const* argvp[])
     managed_shared_memory::handle_t handle = segment.get_handle_from_address(shptr);
     std::cout << "Shared Memory handle: " << handle << std::endl;
 
-    memset(buffer_shared_memory, 'Apple', strlen(buffer_shared_memory));
+    // memset(buffer, '\0', strlen(buffer));
     memset(shptr, '\0', 1024);
-    memcpy((char*)shptr, buffer_shared_memory, strlen(buffer_shared_memory));
+    memcpy((char*)shptr, buffer, strlen(buffer));
 
-    std::cout << "buffer_shared_memory: " << buffer_shared_memory << std::endl;   
+    std::cout << "shptr: " << (char*)shptr << std::endl;   
 
     close(business_logic);
     printf("Disconnected from the server.\n");
+    shared_memory_object::remove("MySharedMemory"); 
+    std::cin.getline(buffer, BUFFER_SIZE);
     return 0;
 
 }
 
-bool is_client_connection_close(const char* msg)
+bool is_client_connection_close(const char* msg) 
 {
     for (int i = 0; i < strlen(msg); ++i)
     {
