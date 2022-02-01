@@ -1,5 +1,5 @@
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -10,6 +10,7 @@
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <cstdlib> //std::system
+#include <mutex>
 
 #define ERROR_BL "BL ERROR: "
 #define DEFAULT_PORT 1605
@@ -24,7 +25,7 @@ bool is_client_connection_close(const char* msg);
 int main(int argc, char const* argvp[])
 {
     int business_logic = socket(AF_INET, SOCK_STREAM, 0);
-    char buffer[BUFFER_SIZE], buffer_shared_memory[BUFFER_SIZE], opt[10];
+    char buffer[BUFFER_SIZE], buffer_shared_memory[BUFFER_SIZE];
 
     if (business_logic < 0)
     {
@@ -50,18 +51,10 @@ int main(int argc, char const* argvp[])
         << inet_ntoa(server_address.sin_addr) 
         << "with port number: " << DEFAULT_PORT << "\n";
     }
- 
-    // bzero(buffer, BUFFER_SIZE);
-    // strcpy(buffer, "HELLO, THIS IS BL.");
-    // printf("Client: %s\n", buffer);
-    // send(business_logic, buffer, strlen(buffer), 0);
 
     bzero(buffer, BUFFER_SIZE);
     recv(business_logic, buffer, sizeof(buffer), 0);
-    printf("Server: %s\n", buffer);
-
-    //memset(buffer_shared_memory, '\0', sizeof(buffer_shared_memory));
-    memset(opt, '\0', sizeof(opt));
+    printf("Getting a value from the server: %s\n", buffer);
 
     struct shm_remove
     {
@@ -69,7 +62,7 @@ int main(int argc, char const* argvp[])
         ~shm_remove() {shared_memory_object::remove("MySharedMemory");} 
     } remover;
 
-    managed_shared_memory segment (create_only, "MySharedMemory", 65536);
+    managed_shared_memory segment (create_only, "MySharedMemory", 65536); // create managed_shared_memory member 
     managed_shared_memory::size_type free_memory_before = segment.get_free_memory();
     void *shptr = segment.allocate(1024);
     managed_shared_memory::size_type free_memory_after = segment.get_free_memory();
@@ -81,18 +74,14 @@ int main(int argc, char const* argvp[])
     managed_shared_memory::handle_t handle = segment.get_handle_from_address(shptr);
     std::cout << "Shared Memory handle: " << handle << std::endl;
 
-    // memset(buffer, '\0', strlen(buffer));
     memset(shptr, '\0', 1024);
-    memcpy((char*)shptr, buffer, strlen(buffer));
-
-    std::cout << "shptr: " << (char*)shptr << std::endl;   
+    memcpy((char*)shptr, buffer, strlen(buffer)); // so far, the usual test copy in order to display it on the server using shared memory
+    std::cout << "Shared memory value: " << (char*)shptr << std::endl;   
 
     close(business_logic);
     printf("Disconnected from the server.\n");
     shared_memory_object::remove("MySharedMemory"); 
-    std::cin.getline(buffer, BUFFER_SIZE);
     return 0;
-
 }
 
 bool is_client_connection_close(const char* msg) 

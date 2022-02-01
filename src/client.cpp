@@ -1,5 +1,5 @@
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>

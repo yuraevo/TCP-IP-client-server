@@ -1,5 +1,5 @@
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -14,6 +14,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <cstdlib> //std::system
+#include <mutex>
 
 #define ERROR_S "SERVER ERROR: "
 #define DEFAULT_PORT 1603
@@ -25,30 +26,29 @@
 std::mutex display_mutex;
 using namespace boost::interprocess;
 
-void create_communication_with_client();
-void create_communication_with_business_logic();
+void create_communication();
 bool is_client_connection_close(const char* msg);
 
 int main(int argc, char const* argvp[])
 {
-    std::thread::id this_id = std::this_thread::get_id();
-    std::cout << "ID of process running main program: " << this_id << std::endl;
-    std::thread t1(create_communication_with_client);
-    t1.join();
+    // At this point, you may notice that the implementation is in test form. Unfortunately, 
+    //I stumbled upon the problem described in the comments in the code below. 
+    // I've been trying to figure this out for a while. 
+    // At the moment, the client, server, and business logic communicate through the process, 
+    // and on the business logic side, a shared memory object is created that should be read on the server side 
+    // (but not read due to the problem described below) and sent to the client through the process. 
+    // As soon as I solve the problem with shared_memory on the server side, 
+    // I will add the full implementation of the business logic and update the repository, but for now, please look at what is at the moment.
+    create_communication();
 }
 
-void create_communication_with_client()
+void create_communication()
 {
-    std::thread::id this_id = std::this_thread::get_id();
-    std::cout << "ID of process running communication_with_client program: " << this_id << std::endl;
-    display_mutex.lock();
-
     int client, server, business_logic;
     char buffer[BUFFER_SIZE], buffer_shared_memory[BUFFER_SIZE], opt[10];
-    char retData;
     bool isExit = false;
 
-    server = socket(AF_INET, SOCK_STREAM, 0);
+    server = socket(AF_INET, SOCK_STREAM, 0); // create server socket
     if (server < 0) 
     {
         std::cout << ERROR_S << "Can't accepting client.\n";
@@ -58,7 +58,7 @@ void create_communication_with_client()
         std::cout << "[+]TCP server socket created.\n";
     }
 
-    business_logic = socket(AF_INET, SOCK_STREAM, 0);
+    business_logic = socket(AF_INET, SOCK_STREAM, 0); // create business_logic socket
     if (business_logic < 0)
     {
         std::cout << ERROR_S << "Can't accepting business_logic.\n";
@@ -67,7 +67,6 @@ void create_communication_with_client()
     else {
         std::cout << "[+]TCP business_logic socket created.\n";
     }
-
 
     struct sockaddr_in server_address, client_addr, business_logic_addr;
     socklen_t size = sizeof(server_address);
@@ -91,7 +90,7 @@ void create_communication_with_client()
     }
 
     ret = bind(business_logic, reinterpret_cast<struct sockaddr*>(&business_logic_addr), sizeof(business_logic_addr));
-    if (ret < 0)
+    if (ret < 0) 
     {
         std::cout << ERROR_S << "binding connection. Socket has already been establishing.\n";
         exit(1);
@@ -129,37 +128,33 @@ void create_communication_with_client()
         else {
             std::cout << "[+]Business logic connected.\n";
             send(business_logic, buffer, strlen(buffer), 0); 
-
-
+            
             memset(buffer_shared_memory, '\0', sizeof(buffer_shared_memory));
             memset(opt, '\0', sizeof(opt)); 
 
             // mapped_region region;
-
             // shared_memory_object shared_memory_object(open_only, "MySharedMemory", read_only);
             // region = mapped_region(shared_memory_object, read_only);
             // void *msg = static_cast<void*>(region.get_address());
+            // shared_memory_object::remove("MySharedMemory");
 
-            shared_memory_object::remove("MySharedMemory");
+            // !!! Unfortunately, an error pops up in the server binary and so far I can’t figure out what the problem is:
+            // libc++abi: terminating with uncaught exception of type boost::interprocess::interprocess_exception: No such file or directory
             managed_shared_memory segment(open_read_only, "MySharedMemory");
+
             managed_shared_memory::handle_t handle = 192; 
-
-            // std::stringstream s;
-            // s << 240;
-            // s >> handle;
-
             void *msg = segment.get_address_from_handle(handle);
 
-            // std::cout << "answer for business_logic: \n";
-            std::cout << (char*)msg << std::endl;
+            std::cout << "Get value from shared memory: " << (char*)msg << std::endl;
 
-            // send(client, mem, strlen(mem), 0);
+            // When the previous error that was described a couple of lines above is solved, 
+            // then this is the response of the business logic through the shared memory to the server, 
+            // and the server will send it to the client through the process
+            // send(client, (char*)msg, strlen(mem), 0); 
         }
         close(client);
         printf("[+]Client disconnected.\n\n");
-        
     }
-    display_mutex.unlock();
 }
 
 bool is_client_connection_close(const char* msg)
