@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -11,7 +10,8 @@
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/mapped_region.hpp>
-#include <string>
+#include <sstream>
+#include <stdio.h>
 #include <cstdlib> //std::system
 
 #define ERROR_S "SERVER ERROR: "
@@ -42,7 +42,7 @@ void create_communication_with_client()
     display_mutex.lock();
 
     int client, server, business_logic;
-    char buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE], buffer_shared_memory[BUFFER_SIZE], opt[10];
     char retData;
     bool isExit = false;
 
@@ -129,30 +129,25 @@ void create_communication_with_client()
             send(business_logic, buffer, strlen(buffer), 0); 
 
 
-
-            //Open already created shared memory object.
-            shared_memory_object shm (open_only, "MySharedMemory", read_only);
-
-            //Map the whole shared memory in this process
-            mapped_region region(shm, read_only);
-
-            //Check that memory was initialized to 1
-            char *mem = static_cast<char*>(region.get_address());
+            // memset(buffer_shared_memory, '\0', sizeof(buffer_shared_memory));
+            // memset(opt, '\0', sizeof(opt));
+    
+            // managed_shared_memory segment (open_only, "MySharedMemory");
+            // managed_shared_memory::handle_t handle = 0;
 
 
-            std::cout << "Go to client?\n";
+            // void *msg = segment.get_address_from_handle(handle);
 
-            send(client, mem, strlen(mem), 0);
+            // std::cout << "answer for business_logic: \n";
+            // std::cout << (char*)msg << std::endl;
+
+
+            std::cout << "Go to client?\n"; 
+
+            // send(client, mem, strlen(mem), 0);
             
 
         }
-
-        // server = accept(business_logic, reinterpret_cast<struct sockaddr*>(&server_address), &size);
- 
-        // bzero(buffer, 1024);
-        // strcpy(buffer, "HI, THIS IS SERVER. Please wait, results are being processed");
-        // printf("Server: %s\n", buffer);
-        // send(client, buffer, strlen(buffer), 0);
  
         close(client);
         printf("[+]Client disconnected.\n\n");
