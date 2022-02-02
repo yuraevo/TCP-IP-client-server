@@ -13,10 +13,18 @@
 #define BUFFER_SIZE 1024
 #define SERVER_CLOSE_CONNECTION_SYMBOL '#'
 
+typedef struct
+{
+  char symbol[BUFFER_SIZE];
+  char company[BUFFER_SIZE];
+  int numOrdered;
+} telegram;
+
 bool is_client_connection_close(const char* msg);
 
 int main(int argc, char const* argvp[])
 {
+    telegram s_telegram;
     int client = socket(AF_INET, SOCK_STREAM, 0);
     char buffer[BUFFER_SIZE];
     bool isClose = false;
@@ -31,7 +39,7 @@ int main(int argc, char const* argvp[])
     }
 
     struct sockaddr_in server_address;
-    server_address.sin_port = htons(DEFAULT_PORT);
+    server_address.sin_port = DEFAULT_PORT;
     server_address.sin_family = AF_INET;
     inet_pton(AF_INET, SERVER_IP, &server_address.sin_addr);
 
@@ -48,31 +56,27 @@ int main(int argc, char const* argvp[])
 
     do
     {
-        std::cout << "Client: ";
         bzero(buffer, BUFFER_SIZE);
-        std::cin.getline(buffer, BUFFER_SIZE);
-        send(client, buffer, strlen(buffer), 0);
-        std::cout << buffer << std::endl;
         if(is_client_connection_close(buffer))
         {
             isClose = is_client_connection_close(buffer);
         }
+        std::cout << "Enter company: ";
+        std::cin >> s_telegram.company;
 
-        bzero(buffer, 1024);
-        recv(client, buffer, sizeof(buffer), 0);
-        std::cout << "Server: " << buffer << std::endl;
+        std::cout << "Enter symbol: ";
+        std::cin >> s_telegram.symbol;
+        
+        std::cout << "Enter number ordered: ";
+        std::cin >> s_telegram.numOrdered;
+    
+        send(client, reinterpret_cast<const char*>(&s_telegram), sizeof(s_telegram), 0);
+
+        // bzero(buffer, 1024);
+        // recv(client, buffer, sizeof(buffer), 0);
+        // std::cout << "Server: " << buffer << std::endl;
         
     } while (isClose == false);
-    
- 
-    // bzero(buffer, 1024);
-    // strcpy(buffer, "HELLO, THIS IS CLIENT.");
-    // printf("Client: %s\n", buffer);
-    // send(business_logic, buffer, strlen(buffer), 0);
- 
-    // bzero(buffer, 1024);
-    // recv(business_logic, buffer, sizeof(buffer), 0);
-    // printf("Server: %s\n", buffer);
  
     // close(business_logic);
     // printf("Disconnected from the server.\n");
