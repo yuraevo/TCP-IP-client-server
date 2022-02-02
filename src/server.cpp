@@ -45,6 +45,17 @@ void create_communication()
     char buffer[BUFFER_SIZE];
     bool isExit = false;
 
+    key_t key_company = ftok("key",65);
+    key_t key_symbol = ftok("key_symbol_business_logic_shared_memory",66);
+    // key_t key_number_ordered = ftok("key_number_ordered_business_logic_shared_memory",65);
+
+    int shm_company = shmget(key_company,1024,0666|IPC_CREAT);
+    int shm_symbol = shmget(key_symbol,1024,0666|IPC_CREAT);
+    // int shm_number_ordered = shmget(key_number_ordered, 1024, 0666|IPC_CREAT);
+
+    char *str_company = (char*) shmat(shm_company,(void*)0,0);
+    char *str_symbol = (char*) shmat(shm_symbol,(void*)0,0);
+
     server = socket(AF_INET, SOCK_STREAM, 0); // create server socket
     if (server < 0) 
     {
@@ -63,12 +74,11 @@ void create_communication()
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = htons(INADDR_ANY);
 
-
     int ret = bind(server, reinterpret_cast<struct sockaddr*>(&server_address), sizeof(server_address));
     if (ret < 0)
     {
         std::cout << ERROR_S << "binding connection. Socket has already been establishing.\n";
-        exit(1);
+        exit(1); 
     }
 
     listen(server, 5);
@@ -78,7 +88,7 @@ void create_communication()
     {
         size = sizeof(size);
 
-        std::cout << "SERVER: " << "Listening clients...\n";
+        std::cout << "SERVER: " << "Listening clients...\n";  
         client = accept(server, reinterpret_cast<struct sockaddr*>(&client_addr), &size);
         if(client < 0)
         {
@@ -87,32 +97,29 @@ void create_communication()
         }
         else {
             std::cout << "[+]Client connected.\n";
-            bzero(buffer, 1024);
-            recv(client, reinterpret_cast<char*>(&tel), sizeof(tel), 0);
+            bzero(buffer, 1024);  
+            recv(client, reinterpret_cast<char*>(&tel), sizeof(tel), 0); 
             // std::cout << "Company: " << tel.company << std::endl;
 
-            // ftok to generate unique key
-            key_t key = ftok("business_logic_shared_memory", 65);
 
-            // shmget returns an identifier in shmid
-            int shmid = shmget(key, 1024, 0666|IPC_CREAT);
+            strcpy(str_company, tel.company); 
+            std::cout << "Data read from memory str_company: " << str_company << std::endl;
 
-             // shmat to attach to shared memory
-            char *str = (char*) shmat(shmid, (void*)0, 0);
-
-            printf("Data read from memory: %s\n", str); 
+            strcpy(str_symbol, tel.symbol);
+            std::cout << "Data read from memory str_symbol: " << str_symbol << std::endl;
             
-            //detach from shared memory 
-            shmdt(str);
-    
-            // destroy the shared memory
-            shmctl(shmid, IPC_RMID, NULL);
+
+            //destroy the shared memory
+            // shmctl(shm_company, IPC_RMID, NULL);
+            // shmctl(shm_symbol, IPC_RMID, NULL); 
+            // shmctl(shm_number_ordered, IPC_RMID, NULL);
         }
+        // break;
 
     // send(client, (char*)msg, strlen(mem), 0); 
+    }
         close(client);
         printf("[+]Client disconnected.\n\n");
-    }
 }
 
 bool is_client_connection_close(const char* msg)
