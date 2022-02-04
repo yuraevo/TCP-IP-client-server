@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <cstdlib> //std::system
 #include <mutex>
+#include <sys/msg.h>
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -45,18 +46,18 @@ void create_communication()
     char buffer[BUFFER_SIZE];
     bool isExit = false;
 
-    key_t key_company = ftok("key",65);
-    key_t key_symbol = ftok("key_symbol_business_logic_shared_memory",66);
+    key_t key_symbol = ftok("key_symbol",65);
+    key_t key_company = ftok("key_company",65);
     // key_t key_number_ordered = ftok("key_number_ordered_business_logic_shared_memory",65);
 
-    int shm_company = shmget(key_company,1024,0666|IPC_CREAT);
     int shm_symbol = shmget(key_symbol,1024,0666|IPC_CREAT);
+    int shm_company = shmget(key_company,1024,0666|IPC_CREAT);
     // int shm_number_ordered = shmget(key_number_ordered, 1024, 0666|IPC_CREAT);
 
-    char *str_company = (char*) shmat(shm_company,(void*)0,0);
     char *str_symbol = (char*) shmat(shm_symbol,(void*)0,0);
+    char *str_company = (char*) shmat(shm_company,(void*)0,0);
 
-    server = socket(AF_INET, SOCK_STREAM, 0); // create server socket
+    server = socket(AF_INET, SOCK_STREAM, 0); // create server socket 
     if (server < 0) 
     {
         std::cout << ERROR_S << "Can't accepting client.\n";
@@ -101,13 +102,12 @@ void create_communication()
             recv(client, reinterpret_cast<char*>(&tel), sizeof(tel), 0); 
             // std::cout << "Company: " << tel.company << std::endl;
 
+            strcpy(str_symbol, tel.symbol);
+            std::cout << "Data read from memory str_symbol: " << str_symbol << std::endl;
 
             strcpy(str_company, tel.company); 
             std::cout << "Data read from memory str_company: " << str_company << std::endl;
 
-            strcpy(str_symbol, tel.symbol);
-            std::cout << "Data read from memory str_symbol: " << str_symbol << std::endl;
-            
 
             //destroy the shared memory
             // shmctl(shm_company, IPC_RMID, NULL);

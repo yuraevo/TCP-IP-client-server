@@ -61,12 +61,12 @@ int main(int argc, char const* argvp[])
         {
             isClose = is_client_connection_close(buffer);
         }
+        std::cout << "Enter symbol: ";
+        std::cin >> s_telegram.symbol;
+
         std::cout << "Enter company: ";
         std::cin >> s_telegram.company;
 
-        std::cout << "Enter symbol: ";
-        std::cin >> s_telegram.symbol;
-        
         std::cout << "Enter number ordered: ";
         std::cin >> s_telegram.numOrdered;
     
